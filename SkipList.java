@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.ArrayList;
+import java.lang.reflect.Array;
 
 /**
  * 
@@ -57,36 +58,69 @@ public class SkipList<K extends Comparable<K>, E> {
 	}
 
 	private void adjustHead(int newLevel) {
-		SkipNode temp = head;
-		head = new SkipNode(null, null, newLevel);
+		SkipNode<K, E> temp = head;
+		head = new SkipNode<K, E>(null, null, newLevel);
 		for (int i = 0; i <= level; i++) {
 			head.forward[i] = temp.forward[i];
 		}
 		level = newLevel;
 	}
 
-	/** Insert a key, element pair into the skip list */
-	public boolean insert(Comparable key, Object elem) {
-		int newLevel = randomLevel(); // New node's level
-		if (newLevel > level) { // If new node is deeper
-			adjustHead(newLevel); // adjust the header
-		}
-		// Track end of level
-		SkipNode[] update = new SkipNode[level + 1];
-		SkipNode x = head; // Start at header node
-		for (int i = level; i >= 0; i--) { // Find insert position
-			while ((x.forward[i] != null) && (x.forward[i].key().compareTo(key) < 0)) {
-				x = x.forward[i];
+	@SuppressWarnings("unchecked")
+	public SkipNode<K, E>[] dump() {
+		SkipNode<K, E> temp = head;
+		@SuppressWarnings("unchecked")
+		SkipNode<K, E>[] list = new SkipNode[1];
+		int length = 0;
+		while (temp != null) { // traverses skip list
+			if (length == 0) { // to set up the output array
+				list[0] = new SkipNode<K, E>(temp.key(), temp.element(), temp.forward.length);
+				length++;
+			} else {
+				@SuppressWarnings("unchecked")
+				SkipNode<K, E>[] tempArray = new SkipNode[list.length + 1];
+				System.arraycopy(list, 0, tempArray, 0, list.length);
+				tempArray[tempArray.length - 1] = new SkipNode<K, E>(temp.key(), temp.element(), temp.forward.length);
+				list = tempArray;
 			}
+			temp = temp.forward[0];
+		}
+		return list; // Returns result
+	}
+
+	/**
+	 * Getter method for the skiplist's size
+	 * 
+	 * @return An integer of the number of skipnodes in the skiplist. Does not
+	 *         include the header skipnode.
+	 */
+	public int getSize() {
+		return size;
+	}
+
+	/** Insert a key, element pair into the skip list */
+	public void insert(K key, E element) {
+
+		int newLevel = randomLevel(); // New node's level
+		if (newLevel > level) // If new node is deeper
+			adjustHead(newLevel); // adjust the header
+
+		// Creates new array
+		@SuppressWarnings("unchecked")
+		SkipNode<K, E>[] update = (SkipNode<K, E>[]) Array.newInstance(SkipNode.class, level + 1);
+
+		SkipNode<K, E> x = head; // Start at header node
+		for (int i = level; i >= 0; i--) { // Find insert position
+			while ((x.forward[i] != null) && (key.compareTo(x.forward[i].key()) > 0))
+				x = x.forward[i];
 			update[i] = x; // Track end at level i
 		}
-		x = new SkipNode(key, elem, newLevel);
+		x = new SkipNode<K, E>(key, element, newLevel);
 		for (int i = 0; i <= newLevel; i++) { // Splice into list
 			x.forward[i] = update[i].forward[i]; // Who x points to
-			update[i].forward[i] = x; // Who points to x
+			update[i].forward[i] = x; // Who y points to
 		}
 		size++; // Increment dictionary size
-		return true;
-
 	}
+
 }
